@@ -145,7 +145,7 @@ class GmCog(commands.GroupCog, group_name="gm"):
             artifact_list = await artifact.list(session)
             body = "\n".join([a.name for a in artifact_list])
             await interaction.response.send_message(
-                f"Registerd artifacts\n```{body}```", ephemeral=True
+                f"Registered artifacts\n```\n{body}\n```", ephemeral=True
             )
 
     @app_commands.command(description="Reinitialise the GM context and handles.")

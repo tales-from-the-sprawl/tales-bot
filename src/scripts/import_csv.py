@@ -55,7 +55,7 @@ def main(input: IO, output: IO):
             alt_handles,
             alt_balance,
             groups,
-            tacoma,
+            # tacoma,
             _u_number,
             _server,
             _category,
@@ -67,7 +67,7 @@ def main(input: IO, output: IO):
             parse_list(col("Alternativa handles")),
             parse_dict(col("Pengar på övriga:")),
             parse_list(col("Grupper:")),
-            parse_bool(col("Tacoma")),
+            # parse_bool(col("Tacoma")),
             col("u-nummer"),
             col("Server"),
             col("Category"),
@@ -79,9 +79,7 @@ def main(input: IO, output: IO):
             (v, alt_balance.get(v, 0)) for v in alt_handles
         ]
 
-        all_groups = (["tacoma"] if tacoma else []) + (
-            [v for v in groups if v != "trinity_taskbar"]
-        )
+        all_groups = [v for v in groups if v != "trinity_taskbar"]
 
         shops_owner = ["trinity_taskbar"] if handle == "njal" else []
         employee = ["trinity_taskbar"] if "trinity_taskbar" in groups else []

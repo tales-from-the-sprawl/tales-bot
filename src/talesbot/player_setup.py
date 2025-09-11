@@ -1,5 +1,6 @@
 import logging
 from typing import List
+from warnings import deprecated
 
 import simplejson
 from configobj import ConfigObj
@@ -8,6 +9,7 @@ from . import actors, channels, finances, groups, handles, reactions, shops
 from .common import coin, emoji_accept
 from .config import config_dir
 from .custom_types import ActionResult, Actor, Handle, HandleTypes, PlayerData
+from .known_handles import KnownHandle, read_known_handles
 from .shops import Shop
 
 # Known_handles is meant to be read-only during the event
@@ -19,24 +21,51 @@ logger = logging.getLogger(__name__)
 
 
 class PlayerSetupInfo:
-    def __init__(self, handle_id: str):
-        self.handles = [
+    handles: list[tuple[str, int]]
+    npc_handles: list[tuple[str, int]]
+    burners: list[tuple[str, int]]
+    groups: list[str]
+    shops_owner: list[str]
+    shops_employee: list[str]
+    starting_money: int  # Unused
+
+    @staticmethod
+    def from_known_handle(kn: KnownHandle) -> "PlayerSetupInfo":
+        obj = PlayerSetupInfo()
+        obj.handles = [(kn.handle, kn.balance)] + [
+            (v, kn.alt_balance.get(v, 0)) for v in kn.alt_handles
+        ]
+        obj.npc_handles = []
+        obj.burners = []
+        obj.groups = (["tacoma"] if kn.tacoma else []) + (
+            [v for v in kn.groups if v != "trinity_taskbar"]
+        )
+        obj.shops_owner = ["trinity_taskbar"] if kn.handle == "njal" else []
+        obj.shops_employee = (
+            ["trinity_taskbar"] if "trinity_taskbar" in kn.groups else []
+        )
+        return obj
+
+    @staticmethod
+    def from_string(string: str):
+        obj = PlayerSetupInfo()
+        obj.__dict__.update(simplejson.loads(string))
+        return obj
+
+    @staticmethod
+    def init_reserved(handle_id: str):
+        obj = PlayerSetupInfo()
+        obj.handles = [
             (handle_id, 0),
             ("__example_handle1", 0),
             ("__example_handle2", 0),
         ]
-        self.npc_handles = [("__example_npc1", 0), ("__example_npc1", 0)]
-        self.burners = [("__example_burner1", 0), ("__example_burner1", 0)]
-        self.groups = ["__example_group1", "__example_group2"]
-        self.shops_owner = ["__example_shop1"]
-        self.shops_employee = ["__example_shop1"]
-        self.starting_money = 10
-
-    @staticmethod
-    def from_string(string: str):
-        obj = PlayerSetupInfo(None)
-        obj.__dict__.update(simplejson.loads(string))
-        return obj
+        obj.npc_handles = [("__example_npc1", 0), ("__example_npc1", 0)]
+        obj.burners = [("__example_burner1", 0), ("__example_burner1", 0)]
+        obj.groups = ["__example_group1", "__example_group2"]
+        obj.shops_owner = ["__example_shop1"]
+        obj.shops_employee = ["__example_shop1"]
+        obj.starting_money = 10
 
     def to_string(self):
         return simplejson.dumps(self.__dict__)
@@ -91,15 +120,23 @@ def get_known_handles_configobj():
     return ConfigObj(str(config_dir / "known_handles.conf"))
 
 
+""" def read_player_setup_info(handle_id: str) -> KnownHandle | None:
+    info = read_known_handles()
+    return info.get(handle_id) """
+
+
 def read_player_setup_info(handle_id: str):
-    known_handles = get_known_handles_configobj()
-    if handle_id in known_handles:
-        return PlayerSetupInfo.from_string(known_handles[handle_id])
+    info = read_known_handles()
+    known_handle = info.get(handle_id)
+    if known_handle is not None:
+        return PlayerSetupInfo.from_known_handle(known_handle)
     else:
         return None
-        # To allow players to join with unannounced handles, switch the above line to the below:
-        # Return a new object, containing only the one handle we know we want
-        # return PlayerSetupInfo(handle_id)
+
+
+# To allow players to join with unannounced handles, switch the above line to the below:
+# Return a new object, containing only the one handle we know we want
+# return PlayerSetupInfo(handle_id)
 
 
 def get_all_reserved():
@@ -110,8 +147,7 @@ def get_all_reserved():
 
 
 def can_setup_new_player_with_handle(main_handle: str):
-    info = read_player_setup_info(main_handle)
-    if info is None:
+    if main_handle not in read_known_handles():
         return False
     handle = handles.get_handle(main_handle)
     return handle.handle_type == HandleTypes.Unused
@@ -134,6 +170,7 @@ async def setup_handles_and_welcome_new_player(player: PlayerData, main_handle: 
         return False
 
     info = read_player_setup_info(main_handle)
+    assert info is not None
 
     content = f"Welcome to the matrix_client, **{main_handle}**. This is your command line but you can issue commands anywhere.\n"
     content += f"Your account ID is {player.player_id}. All channels ending with {player.player_id} are only visible to you.\n"
