@@ -46,9 +46,14 @@ class HandleModal(ui.Modal, title="Register as player"):
                 )
 
     async def on_error(self, interaction: discord.Interaction, error: Exception):
-        await interaction.response.send_message(
-            "Oops! Something went wrong.", ephemeral=True
-        )
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                "Oops! Something went wrong.", ephemeral=True
+            )
+        else:
+            await interaction.followup.send(
+                "Oops! Something went wrong.", ephemeral=True
+            )
         logger.error("failed to register player", exc_info=error)
 
 
