@@ -91,7 +91,7 @@ async def repost_message_to_channel(
     await channel.send(post, files=files)
 
 
-async def process_open_message(message, anonymous=False):
+async def process_open_message(message: discord.Message, anonymous=False):
     tasks = [asyncio.create_task(message.delete())]
     current_channel = str(message.channel.name)
     player_id = players.get_player_id(str(message.author.id))
