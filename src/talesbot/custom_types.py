@@ -1,3 +1,4 @@
+import datetime
 from copy import deepcopy
 from enum import Enum
 
@@ -28,8 +29,9 @@ class PostTimestamp:
         return obj
 
     @staticmethod
-    def from_datetime(timestamp, dst_diff: int = 0):
-        return PostTimestamp(timestamp.hour + dst_diff, timestamp.minute)
+    def from_datetime(timestamp: datetime.datetime):
+        local = timestamp.astimezone()
+        return PostTimestamp(local.hour, local.minute)
 
     def to_string(self):
         return simplejson.dumps(self.__dict__)

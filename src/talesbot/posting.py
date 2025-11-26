@@ -110,7 +110,7 @@ async def process_open_message(message, anonymous=False):
         else:
             current_poster_id = player_id
             current_poster_display_name = player_id
-    post_time = PostTimestamp.from_datetime(message.created_at, dst_diff=2)
+    post_time = PostTimestamp.from_datetime(message.created_at)
     full_post = channels.record_new_post(current_channel, current_poster_id, post_time)
     mirrored_channels = await server.get_mirrored_channels(message.channel)
     msg_data = MessageData.load_from_discord_message(message)
