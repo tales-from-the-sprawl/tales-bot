@@ -149,6 +149,8 @@ def get_all_reserved():
 def can_setup_new_player_with_handle(main_handle: str):
     if main_handle not in read_known_handles():
         return False
+    elif handles.is_forbidden_handle(main_handle) != handles.HandleAllowedResult.Allowed:
+        return False
     handle = handles.get_handle(main_handle)
     return handle.handle_type == HandleTypes.Unused
 
