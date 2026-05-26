@@ -1989,8 +1989,8 @@ def clear_order_semaphores_for_shop(shop_id: str):
 async def order_product(shop: Shop, product: Product, buyer_handle: Handle):
     result = ActionResult()
     if not product.in_stock:
-        return f"Sorry - {shop.name} is all out of {product.name}!"
-
+        result.report = f"Sorry - {shop.name} is all out of {product.name}!"
+        return result
     delivery_id = get_delivery_id(shop.shop_id, buyer_handle.actor_id)
     if delivery_id is None:
         # No delivery ID set for this player
