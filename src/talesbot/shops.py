@@ -1801,16 +1801,14 @@ async def process_reaction_in_storefront(message, user_id: str, emoji: str):
     if shop_id is None:
         result.report = f"Error: tried to order {emoji} from shop but could not map channel {message.channel.id} to any shop."
         return result
-    shop: Shop = read_shop(shop_id)
+    shop = read_shop(shop_id)
     if shop is None:
         result.report = (
             f"Error: tried to order {emoji} from shop but could not find shop."
         )
         return result
 
-    action: StorefrontAction = read_storefront_msg_mapping(
-        shop.shop_id, str(message.id)
-    )
+    action = read_storefront_msg_mapping(shop.shop_id, str(message.id))
     if action is None:
         result.report = f"Error: tried to process {emoji} but could not map message id {message.id} to any action."
     elif action.action_type == StorefrontActionTypes.Order:
@@ -1818,7 +1816,7 @@ async def process_reaction_in_storefront(message, user_id: str, emoji: str):
         if product_id is None:
             result.report = f"Error: tried to order {emoji} from {shop.name} but could not map the message to a product."
             return result
-        product: Product = read_product(shop_id, product_id)
+        product = read_product(shop_id, product_id)
         if product is None:
             result.report = (
                 f"Error: cannot find product {product_id} at shop {shop.name}."
@@ -1862,13 +1860,13 @@ async def process_reaction_in_order_flow(channel_id: str, msg_id: str, emoji: st
     if shop_id is None:
         result.report = f"Error: tried to edit order but could not map channel {channel_id} to any shop."
         return result
-    shop: Shop = read_shop(shop_id)
+    shop = read_shop(shop_id)
     if shop is None:
         result.report = (
             f"Error: tried to edit order, but could not find {shop_id} in database."
         )
         return result
-    mapping: MsgOrderMapping = get_order_mapping_from_msg(shop.shop_id, msg_id)
+    mapping = get_order_mapping_from_msg(shop.shop_id, msg_id)
     if mapping is None:
         result.report = "Error: tried to edit order, but could not map the message to a recent order; it has been delivered or aborted."
         return result
