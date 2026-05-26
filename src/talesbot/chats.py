@@ -1001,9 +1001,7 @@ async def process_reaction_in_chat_hub(message, emoji: str):
 
     message_id = str(message.id)
 
-    chat_connection: ChatConnectionMapping = read_chat_connection_from_hub_msg(
-        message_id
-    )
+    chat_connection = read_chat_connection_from_hub_msg(message_id)
     if chat_connection is None:
         # Error: reacted to old message in chat hub, not connected to any active chat.
         return f"Error: reacted on msg {message_id} chat hub, but it was not connected to any existing chat."

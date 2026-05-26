@@ -62,7 +62,7 @@ def get_common_reactions_summary_string():
 
 class ReactionRecipientSearchResult:
     message = None
-    recipient: str = None
+    recipient: str | None = None
 
 
 async def find_reaction_recipient_and_message(message_id: int, channel):
