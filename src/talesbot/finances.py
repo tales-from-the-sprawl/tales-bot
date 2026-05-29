@@ -1,6 +1,6 @@
+import json
 from copy import deepcopy
 
-import simplejson
 from configobj import ConfigObj
 from discord import Interaction, app_commands
 from discord.ext import commands
@@ -148,18 +148,16 @@ class InternalTransRecord:
     @staticmethod
     def from_string(string: str):
         obj = InternalTransRecord(None, None, 0)
-        loaded_dict = simplejson.loads(string)
+        loaded_dict = json.loads(string)
         obj.__dict__.update(loaded_dict)
-        obj.timestamp: PostTimestamp = PostTimestamp.from_string(
-            loaded_dict["timestamp"]
-        )
+        obj.timestamp = PostTimestamp.from_string(loaded_dict["timestamp"])
         return obj
 
     def to_string(self):
         dict_to_save = deepcopy(self.__dict__)
         if self.timestamp is not None:
             dict_to_save["timestamp"] = PostTimestamp.to_string(self.timestamp)
-        return simplejson.dumps(dict_to_save)
+        return json.dumps(dict_to_save)
 
     @staticmethod
     def from_transaction(transaction: Transaction, for_payer: bool):

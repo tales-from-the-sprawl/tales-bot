@@ -1,8 +1,7 @@
+import json
 import logging
 from typing import List
-from warnings import deprecated
 
-import simplejson
 from configobj import ConfigObj
 
 from . import actors, channels, finances, groups, handles, reactions, shops
@@ -49,7 +48,7 @@ class PlayerSetupInfo:
     @staticmethod
     def from_string(string: str):
         obj = PlayerSetupInfo()
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     @staticmethod
@@ -68,7 +67,7 @@ class PlayerSetupInfo:
         obj.starting_money = 10
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def get_all_reserved(self):
         for handle_id in only_firsts_no_examples(self.handles):
@@ -149,7 +148,9 @@ def get_all_reserved():
 def can_setup_new_player_with_handle(main_handle: str):
     if main_handle not in read_known_handles():
         return False
-    elif handles.is_forbidden_handle(main_handle) != handles.HandleAllowedResult.Allowed:
+    elif (
+        handles.is_forbidden_handle(main_handle) != handles.HandleAllowedResult.Allowed
+    ):
         return False
     handle = handles.get_handle(main_handle)
     return handle.handle_type == HandleTypes.Unused

@@ -1,9 +1,9 @@
 import asyncio
+import json
 import logging
 from enum import Enum
 
 import discord
-import simplejson
 from configobj import ConfigObj
 from discord import Interaction, app_commands
 from discord.ext import commands
@@ -231,11 +231,11 @@ class ChatParticipant:
     @staticmethod
     def from_string(string: str):
         obj = ChatParticipant(None, None, None, None, None, None)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
 
 # This is stored per channel/msg ID, and maps back to the chat
@@ -248,11 +248,11 @@ class ChatConnectionMapping:
     @staticmethod
     def from_string(string: str):
         obj = ChatConnectionMapping(None, None, None)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
 
 class ChatLogEntry:
@@ -271,11 +271,11 @@ class ChatLogEntry:
     @staticmethod
     def from_string(string: str):
         obj = ChatLogEntry(None)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
 
 # This represent everything in discord that can currently be used to interface with the chat:

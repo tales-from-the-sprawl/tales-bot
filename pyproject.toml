@@ -6,7 +6,6 @@ authors = [{ name = "Carl Malmgren", email = "callem217@gmail.com" }]
 dependencies = [
     "discord-py>=2.4.0",
     "configobj>=5.0.8",
-    "simplejson>=3.19.1",
     "emoji>=2.8.0",
     "fastapi>=0.112.2",
     "uvicorn[standard]>=0.34.0",

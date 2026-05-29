@@ -2,13 +2,13 @@
 
 import asyncio
 import datetime
+import json
 import logging
 from copy import deepcopy
 from enum import Enum
 from typing import Dict, List, cast
 
 import discord
-import simplejson
 from configobj import ConfigObj
 from discord import Interaction, app_commands
 from discord.ext import commands
@@ -367,11 +367,11 @@ class Employee:
     @staticmethod
     def from_string(string: str):
         obj = Employee(None)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
 
 class Shop:
@@ -396,7 +396,7 @@ class Shop:
     @staticmethod
     def from_string(string: str):
         obj = Shop(None, None, None, None)
-        loaded_dict = simplejson.loads(string)
+        loaded_dict = json.loads(string)
         obj.__dict__.update(loaded_dict)
         for i, employee_str in enumerate(loaded_dict["employees"]):
             obj.employees[i] = Employee.from_string(employee_str)
@@ -406,7 +406,7 @@ class Shop:
         dict_to_save = deepcopy(self.__dict__)
         list_of_employees = [step.to_string() for step in dict_to_save["employees"]]
         dict_to_save["employees"] = list_of_employees
-        return simplejson.dumps(dict_to_save)
+        return json.dumps(dict_to_save)
 
     def get_employee_ids(self):
         for employee in self.employees:
@@ -500,11 +500,11 @@ class Product:
     @staticmethod
     def from_string(string: str):
         obj = Product(None, None, None, None)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def get_storefront_message_id(self, guild_id: int):
         return self.storefront_msg_ids.get(str(guild_id))
@@ -548,7 +548,7 @@ class Order:
     @staticmethod
     def from_string(string: str):
         obj = Order(None, None, None)
-        loaded_dict = simplejson.loads(string)
+        loaded_dict = json.loads(string)
         obj.__dict__.update(loaded_dict)
         obj.time_created = PostTimestamp.from_string(loaded_dict["time_created"])
         obj.time_updated = PostTimestamp.from_string(loaded_dict["time_updated"])
@@ -558,7 +558,7 @@ class Order:
         dict_to_save = deepcopy(self.__dict__)
         dict_to_save["time_created"] = PostTimestamp.to_string(self.time_created)
         dict_to_save["time_updated"] = PostTimestamp.to_string(self.time_updated)
-        return simplejson.dumps(dict_to_save)
+        return json.dumps(dict_to_save)
 
     def add(
         self,
@@ -601,11 +601,11 @@ class MsgOrderMapping:
     @staticmethod
     def from_string(string: str):
         obj = MsgOrderMapping(None, OrderStatus.Active)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
 
 # Used to represent an action that can be taken from the storefront:
@@ -632,11 +632,11 @@ class StorefrontAction:
     @staticmethod
     def from_string(string: str):
         obj = StorefrontAction(StorefrontActionTypes.Order)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
 
 # "Missing" class: ChannelMapping

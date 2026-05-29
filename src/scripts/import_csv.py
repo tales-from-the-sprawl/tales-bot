@@ -1,9 +1,8 @@
 import csv
-import os
+import json
 from typing import IO, TypedDict, cast
 
 import click
-import simplejson
 from configobj import ConfigObj
 
 
@@ -95,7 +94,7 @@ def main(input: IO, output: IO):
             name=name,
         )
 
-        config[handle] = simplejson.dumps(known_handle)
+        config[handle] = json.dumps(known_handle)
 
     config.write(outfile=output)
 

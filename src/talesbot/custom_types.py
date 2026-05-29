@@ -1,8 +1,7 @@
 import datetime
+import json
 from copy import deepcopy
 from enum import Enum
-
-import simplejson
 
 
 class ActionResult:
@@ -25,7 +24,7 @@ class PostTimestamp:
     @staticmethod
     def from_string(string: str):
         obj = PostTimestamp(0, 0)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     @staticmethod
@@ -34,7 +33,7 @@ class PostTimestamp:
         return PostTimestamp(local.hour, local.minute)
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def pretty_print(self, second: int = -1):
         # Manual DST fix
@@ -103,7 +102,7 @@ class Transaction:
     @staticmethod
     def from_string(string: str):
         obj = Transaction(None, None, None, None, 0)
-        loaded_dict = simplejson.loads(string)
+        loaded_dict = json.loads(string)
         obj.__dict__.update(loaded_dict)
         obj.timestamp = PostTimestamp.from_string(loaded_dict["timestamp"])
         return obj
@@ -112,7 +111,7 @@ class Transaction:
         dict_to_save = deepcopy(self.__dict__)
         if self.timestamp is not None:
             dict_to_save["timestamp"] = PostTimestamp.to_string(self.timestamp)
-        return simplejson.dumps(dict_to_save)
+        return json.dumps(dict_to_save)
 
     def get_undo_hooks_list(self):
         return [
@@ -156,11 +155,11 @@ class Actor:
     @staticmethod
     def from_string(string: str):
         obj = Actor(None, None, 0, 0, 0, 0)  # type: ignore
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
 
 class PlayerData:
@@ -181,11 +180,11 @@ class PlayerData:
     @staticmethod
     def from_string(string: str):
         obj = PlayerData(None, 0, 0)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
 
 class HandleTypes(str, Enum):
@@ -214,11 +213,11 @@ class Handle:
     @staticmethod
     def from_string(string: str):
         obj = Handle("")
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def is_active(self):
         return Handle.is_active_handle_type(self.handle_type)

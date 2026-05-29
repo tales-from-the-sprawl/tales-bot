@@ -8,11 +8,11 @@
 # (this would avoid the double-implementation of access roles that currently exists between groups and actors)
 
 import asyncio
+import json
 import logging
 from typing import Dict, List, cast
 
 import discord
-import simplejson
 from configobj import ConfigObj
 
 # Custom imports
@@ -44,11 +44,11 @@ class Group:
     @staticmethod
     def from_string(string: str):
         obj = Group(None, None, None)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def store(self):
         groups = ConfigObj(groups_file_name)

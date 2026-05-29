@@ -1,7 +1,7 @@
+import json
 from typing import IO, Any, cast
 
 import click
-import simplejson
 from configobj import ConfigObj
 from tabulate import tabulate
 
@@ -29,7 +29,7 @@ def main(known_handles_file: IO, handles_file: IO, all: bool):
     handles_set = {handle for handle in handles[handles_to_actors]}
 
     def table_cols(k, v):
-        val = cast(dict[str, Any], simplejson.loads(v))
+        val = cast(dict[str, Any], json.loads(v))
         claimed = k in handles_set
         player = val.get("player")
         name = val.get("name")

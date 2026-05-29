@@ -4,12 +4,12 @@
 # A scenario could be for example a simulated network crash, automated spam messages, or creation of a new group.
 
 import asyncio
+import json
 import logging
 from copy import deepcopy
 from enum import Enum
 from typing import List
 
-import simplejson
 from configobj import ConfigObj
 
 from . import game, groups, handles, players
@@ -42,11 +42,11 @@ class WaitEvent:
     @staticmethod
     def from_string(string: str):
         obj = WaitEvent()
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def get_type(self):
         return EventType.Wait
@@ -62,11 +62,11 @@ class NetworkOutageEvent:
     @staticmethod
     def from_string(string: str):
         obj = NetworkOutageEvent()
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def get_type(self):
         return EventType.NetworkOutage
@@ -86,11 +86,11 @@ class NetworkDownEvent:
     @staticmethod
     def from_string(string: str):
         obj = NetworkDownEvent()
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def get_type(self):
         return EventType.NetworkDown
@@ -112,11 +112,11 @@ class NetworkRestoredEvent:
     @staticmethod
     def from_string(string: str):
         obj = NetworkRestoredEvent()
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def get_type(self):
         return EventType.NetworkRestored
@@ -139,11 +139,11 @@ class MessagePlayersByHandleEvent:
     @staticmethod
     def from_string(string: str):
         obj = MessagePlayersByHandleEvent(None)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def get_type(self):
         return EventType.MessagePlayersByHandles
@@ -161,11 +161,11 @@ class MessagePlayersExceptHandlesEvent:
     @staticmethod
     def from_string(string: str):
         obj = MessagePlayersExceptHandlesEvent(None)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def get_type(self):
         return EventType.MessageAllPlayersExceptHandles
@@ -193,11 +193,11 @@ class MessageGroupsEvent:
     @staticmethod
     def from_string(string: str):
         obj = MessageGroupsEvent(None)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def get_type(self):
         return EventType.MessageGroups
@@ -220,11 +220,11 @@ class MessageExceptGroupsEvent:
     @staticmethod
     def from_string(string: str):
         obj = MessageExceptGroupsEvent(None)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def get_type(self):
         return EventType.MessageExceptGroups
@@ -266,11 +266,11 @@ class Event:
     @staticmethod
     def from_string(string: str):
         obj = Event(EventType.Unknown, None)
-        obj.__dict__.update(simplejson.loads(string))
+        obj.__dict__.update(json.loads(string))
         return obj
 
     def to_string(self):
-        return simplejson.dumps(self.__dict__)
+        return json.dumps(self.__dict__)
 
     def to_specific_type(self):
         if self.event_type == EventType.Wait:
@@ -299,7 +299,7 @@ class Event:
             if event is None:
                 return
             await event.execute()
-            logger.debug(f"Executed repetition {i+1} out of {self.repetitions}")
+            logger.debug(f"Executed repetition {i + 1} out of {self.repetitions}")
             await asyncio.sleep(self.spacing)
 
 
@@ -311,7 +311,7 @@ class Scenario:
     @staticmethod
     def from_string(string: str):
         obj = Scenario(None)
-        loaded_dict = simplejson.loads(string)
+        loaded_dict = json.loads(string)
         obj.__dict__.update(loaded_dict)
         for i, step_str in enumerate(loaded_dict["steps"]):
             obj.steps[i] = Event.from_string(step_str)
@@ -321,7 +321,7 @@ class Scenario:
         dict_to_save = deepcopy(self.__dict__)
         list_of_strings = [step.to_string() for step in dict_to_save["steps"]]
         dict_to_save["steps"] = list_of_strings
-        return simplejson.dumps(dict_to_save)
+        return json.dumps(dict_to_save)
 
     async def execute(self):
         logger.info(f'Executing scenario "{self.name}"...')
