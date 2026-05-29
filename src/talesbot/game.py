@@ -87,12 +87,6 @@ def is_handle_reserved(handle_id: str):
     return handle_id in reserved_handles
 
 
-def init():
-    for handle in player_setup.get_all_reserved():
-        reserved_handles.add(handle)
-    # TODO: purge landig page, send welcome message
-
-
 def is_out_of_game_chat(channel):
     for handle in chats.get_participant_handle_ids(channel):
         if is_out_of_game_handle(handle):

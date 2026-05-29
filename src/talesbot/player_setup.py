@@ -1,15 +1,10 @@
 import json
 import logging
-from typing import List
-
-from configobj import ConfigObj
 
 from . import actors, channels, finances, groups, handles, reactions, shops
 from .common import coin, emoji_accept
-from .config import config_dir
-from .custom_types import ActionResult, Actor, Handle, HandleTypes, PlayerData
+from .custom_types import ActionResult, Handle, HandleTypes, PlayerData
 from .known_handles import KnownHandle, read_known_handles
-from .shops import Shop
 
 # Known_handles is meant to be read-only during the event
 # It can be edited manually
@@ -51,77 +46,8 @@ class PlayerSetupInfo:
         obj.__dict__.update(json.loads(string))
         return obj
 
-    @staticmethod
-    def init_reserved(handle_id: str):
-        obj = PlayerSetupInfo()
-        obj.handles = [
-            (handle_id, 0),
-            ("__example_handle1", 0),
-            ("__example_handle2", 0),
-        ]
-        obj.npc_handles = [("__example_npc1", 0), ("__example_npc1", 0)]
-        obj.burners = [("__example_burner1", 0), ("__example_burner1", 0)]
-        obj.groups = ["__example_group1", "__example_group2"]
-        obj.shops_owner = ["__example_shop1"]
-        obj.shops_employee = ["__example_shop1"]
-        obj.starting_money = 10
-
     def to_string(self):
         return json.dumps(self.__dict__)
-
-    def get_all_reserved(self):
-        for handle_id in only_firsts_no_examples(self.handles):
-            yield handle_id
-        for handle_id in only_firsts_no_examples(self.npc_handles):
-            yield handle_id
-        for handle_id in only_firsts_no_examples(self.burners):
-            yield handle_id
-        yield from remove_examples(self.groups)
-        for shop_name in remove_examples(self.shops_owner):
-            yield shop_name
-        for shop_name in remove_examples(self.shops_employee):
-            yield shop_name
-
-
-double_underscore = "__"
-
-
-def remove_examples(entries: List[str]):
-    for entry in entries:
-        if double_underscore not in entry:
-            yield entry
-
-
-def remove_examples_from_firsts(entries: List):
-    for entry in entries:
-        if double_underscore not in entry[0]:
-            yield entry
-
-
-def only_firsts_no_examples(entries):
-    for entry in entries:
-        if double_underscore not in entry[0]:
-            yield entry[0]
-
-
-def add_known_handle(handle_id: str):
-    known_handles = ConfigObj(str(config_dir / "known_handles.conf"))
-    if handle_id not in known_handles:
-        known_handles[handle_id] = PlayerSetupInfo(handle_id).to_string()
-        known_handles.write()
-    else:
-        logger.warning(
-            "Trying to edit player setup info for a handle that is already in the database. Please edit the file manually instead."
-        )
-
-
-def get_known_handles_configobj():
-    return ConfigObj(str(config_dir / "known_handles.conf"))
-
-
-""" def read_player_setup_info(handle_id: str) -> KnownHandle | None:
-    info = read_known_handles()
-    return info.get(handle_id) """
 
 
 def read_player_setup_info(handle_id: str):
@@ -138,20 +64,13 @@ def read_player_setup_info(handle_id: str):
 # return PlayerSetupInfo(handle_id)
 
 
-def get_all_reserved():
-    known_handles = get_known_handles_configobj()
-    for handle_id in known_handles:
-        info = PlayerSetupInfo.from_string(known_handles[handle_id])
-        yield from info.get_all_reserved()
-
-
 def can_setup_new_player_with_handle(main_handle: str):
     if main_handle not in read_known_handles():
         return False
-    elif (
-        handles.is_forbidden_handle(main_handle) != handles.HandleAllowedResult.Allowed
-    ):
+
+    if handles.is_forbidden_handle(main_handle) != handles.HandleAllowedResult.Allowed:
         return False
+
     handle = handles.get_handle(main_handle)
     return handle.handle_type == HandleTypes.Unused
 
@@ -287,7 +206,7 @@ async def setup_handles_no_welcome_new_player(actor_id: str, main_handle: str):
 async def setup_alternate_handles(actor_id: str, aliases, alias_type: HandleTypes):
     result = ActionResult()
     result.report = ""
-    for handle_data in remove_examples_from_firsts(aliases):
+    for handle_data in aliases:
         other_handle_id = handle_data[0]
         amount = handle_data[1]
         auto_respond_msg = handle_data[2] if len(handle_data) > 2 else None
@@ -335,11 +254,11 @@ def get_all_connected_aliases_of_type_report(
         return "  [OFF: NPC handles let you act as someone else, and cannot be traced to your other handles.]\n"
 
 
-async def setup_groups(actor_id: str, group_names: List[str]):
+async def setup_groups(actor_id: str, group_names: list[str]):
     any_found = False
     report = ""
     guild = actors.get_guild_for_actor(actor_id)
-    for group_name in remove_examples(group_names):
+    for group_name in group_names:
         any_found = True
         await setup_group_for_new_member(group_name, actor_id)
         channel = groups.get_main_channel(guild, group_name)
@@ -360,13 +279,13 @@ async def setup_group_for_new_member(group_name: str, actor_id: str):
         await groups.create_new_group(group_name, [actor_id])
 
 
-async def setup_shops(actor_id: str, shop_names: List[str], is_owner: bool):
-    handle: Handle = handles.get_active_handle(actor_id)
+async def setup_shops(actor_id: str, shop_names: list[str], is_owner: bool):
+    handle = handles.get_active_handle(actor_id)
     if handle is None:
         return
     guild = actors.get_guild_for_actor(actor_id)
-    for shop_name in remove_examples(shop_names):
-        shop: Shop = await setup_shop_for_member(shop_name, handle, is_owner)
+    for shop_name in shop_names:
+        shop = await setup_shop_for_member(shop_name, handle, is_owner)
         if shop is None:
             report = f"Error: failed to gain access to **{shop_name}**. Most likely the player data entry for {handle.actor_id} is corrupt.\n\n"
         else:
@@ -381,7 +300,7 @@ async def setup_shops(actor_id: str, shop_names: List[str], is_owner: bool):
             report += 'Use ".help employee" to see the commands you can use to manage the business.\n'
             report += f"  Public storefront: {channels.clickable_channel_id_ref(shop.get_storefront_channel_id(guild))}.\n"
             report += f"  Order status: {channels.clickable_channel_id_ref(shop.order_flow_channel_id)}.\n"
-            shop_actor: Actor = actors.read_actor(shop.shop_id)
+            shop_actor = actors.read_actor(shop.shop_id)
             report += f"  Financial status: {channels.clickable_channel_id_ref(shop_actor.finance_channel_id)}.\n"
             report += f"  Business chat hub: {channels.clickable_channel_id_ref(shop_actor.chat_channel_id)}.\n"
             report += f'  Note: customers will see you as **{handle.handle_id}** unless you change it with "/set_tips"!'
@@ -390,7 +309,7 @@ async def setup_shops(actor_id: str, shop_names: List[str], is_owner: bool):
 
 async def setup_shop_for_member(shop_name: str, handle: Handle, is_owner: bool):
     if shops.shop_exists(shop_name):
-        shop: Shop = shops.read_shop(shop_name)
+        shop = shops.read_shop(shop_name)
         await shops.employ(handle, shop, is_owner=is_owner)
         return shop
     else:
