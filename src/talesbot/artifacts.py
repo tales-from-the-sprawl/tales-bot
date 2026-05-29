@@ -38,9 +38,7 @@ def update(name: str, content: str, page: int | None = None):
         frontmatter.dump(post, f)
 
 
-def access(
-    name: str, password: str | None = None
-) -> tuple[list[str], str | None] | tuple[None, None]:
+def access(name: str, password: str | None = None):
     file = config_dir / artifact_conf_dir / f"{name}.md"
     if not os.path.isfile(file):
         return None, None
@@ -53,9 +51,21 @@ def access(
         return parse_body(post.content), cast(str | None, post.get("announcement"))
 
 
-def parse_body(text: str) -> list[str]:
+def get(name: str):
+    file = config_dir / artifact_conf_dir / f"{name}.md"
+    with open(file) as f:
+        post = frontmatter.load(f)
+
+        return parse_body(post.content)
+
+
+def list_all():
+    return [os.path.basename(n) for n in os.listdir(config_dir / artifact_conf_dir)]
+
+
+def parse_body(text: str):
     return text.split("===\n")
 
 
-def dump_body(pages: list[str]) -> str:
+def dump_body(pages: list[str]):
     return "===\n".join(pages)

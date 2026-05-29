@@ -6,12 +6,12 @@ from discord.app_commands.errors import MissingRole, NoPrivateMessage
 from discord.ext import commands
 
 from talesbot import (
+    artifacts,
     gm,
     handles,
     player_setup,
     scenarios,
 )
-from talesbot.database import SessionM, artifact
 
 from ..errors import ReportError
 
@@ -25,33 +25,55 @@ class ArtifactCreateModal(ui.Modal, title="Create Artifact"):
         label="Body", style=TextStyle.long, required=True, max_length=2000
     )
     announcment = ui.TextInput(label="GM Announcment", required=False)
-    page = ui.TextInput(label="Page (overwrite)", required=False)
 
     async def on_submit(self, interaction: Interaction) -> None:
         password = self.password.value if self.password.value != "" else None
         announcment = self.announcment.value if self.announcment.value != "" else None
-        page = int(self.page.value) if self.page.value != "" else None
-        async with SessionM() as session:
-            try:
-                _a, page = await artifact.create(
-                    session,
-                    self.name.value,
-                    self.content.value,
-                    password=password,
-                    announcement=announcment,
-                    page=page,
-                )
-            except Exception as e:
-                raise ReportError("Failed to create artifact") from e
-
-            await interaction.response.send_message(
-                f"Set page {page} on artifact {self.name.value}", ephemeral=True
+        try:
+            artifacts.create(
+                self.name.value,
+                self.content.value,
+                password=password,
+                announcement=announcment,
             )
+        except Exception as e:
+            raise ReportError("Failed to create artifact") from e
+
+        await interaction.response.send_message(
+            f"Created artifact {self.name.value}", ephemeral=True
+        )
 
     async def on_error(self, interaction: Interaction, error: Exception) -> None:
         logger.error("Failed to create artifact", exc_info=error)
         await interaction.response.send_message(
             "Failed to create artifact", ephemeral=True
+        )
+
+
+class ArtifactUpdateModal(ui.Modal, title="Update Artifact"):
+    content = ui.TextInput(
+        label="Body", style=TextStyle.long, required=True, max_length=2000
+    )
+
+    def __init__(self, name: str, content: str, page: int | None) -> None:
+        self.content.default = content
+        self.name = name
+        self.page = page
+
+    async def on_submit(self, interaction: Interaction) -> None:
+        try:
+            artifacts.update(self.name, self.content.value, self.page)
+        except Exception as e:
+            raise ReportError("Failed to update artifact") from e
+
+        await interaction.response.send_message(
+            f"Updated artifact {self.name}", ephemeral=True
+        )
+
+    async def on_error(self, interaction: Interaction, error: Exception) -> None:
+        logger.error("Failed to update artifact", exc_info=error)
+        await interaction.response.send_message(
+            "Failed to update artifact", ephemeral=True
         )
 
 
@@ -102,51 +124,30 @@ class GmCog(commands.GroupCog, group_name="gm"):
 
     artifact_g = app_commands.Group(name="artifact", description="Manage artifacts")
 
-    @artifact_g.command(
-        name="create",
-        description="Create an artifact.",
-    )
-    async def create_artifact(
-        self,
-        interaction: Interaction,
-        name: str,
-        content: str,
-        password: str | None = None,
-        announcment: str | None = None,
-        page: int | None = None,
-    ):
-        async with SessionM() as session:
-            try:
-                _a, page = await artifact.create(
-                    session,
-                    name,
-                    content,
-                    password=password,
-                    announcement=announcment,
-                    page=page,
-                )
-            except Exception as e:
-                raise ReportError("Failed to create artifact") from e
-
-            await interaction.response.send_message(
-                f"Set page {page} on artifact {name}", ephemeral=True
-            )
-
-    @artifact_g.command(name="create_big", description="Create a artifact interactivly")
+    @artifact_g.command(name="create", description="Create a artifact interactivly")
     async def create_artifact_interactive(self, interaction: Interaction):
         await interaction.response.send_modal(ArtifactCreateModal())
+
+    @artifact_g.command(name="update", description="Update a artifact interactivly")
+    async def update_artifact_interactive(
+        self, interaction: Interaction, name: str, page: int | None
+    ):
+        contents = artifacts.get(name)
+        content = contents[page] if page else ""
+        await interaction.response.send_modal(
+            ArtifactUpdateModal(name=name, content=content, page=page)
+        )
 
     @artifact_g.command(
         name="list",
         description="List all artifacts.",
     )
     async def list_artifact(self, interaction: Interaction):
-        async with SessionM() as session:
-            artifact_list = await artifact.list(session)
-            body = "\n".join([a.name for a in artifact_list])
-            await interaction.response.send_message(
-                f"Registered artifacts\n```\n{body}\n```", ephemeral=True
-            )
+        artifact_list = artifacts.list_all()
+        body = "\n".join(artifact_list)
+        await interaction.response.send_message(
+            f"Registered artifacts\n```\n{body}\n```", ephemeral=True
+        )
 
     @app_commands.command(description="Reinitialise the GM context and handles.")
     async def init(self, interaction: Interaction):

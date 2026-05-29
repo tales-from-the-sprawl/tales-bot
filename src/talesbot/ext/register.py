@@ -3,6 +3,7 @@ from typing import cast
 
 from discord import Interaction, Member, app_commands
 from discord.ext import commands
+
 from talesbot import common, handles, players
 
 logger = logging.getLogger(__name__)

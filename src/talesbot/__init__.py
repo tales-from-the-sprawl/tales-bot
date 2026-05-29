@@ -6,12 +6,10 @@ import discord
 import uvicorn
 import uvloop
 from discord.ext import commands
-from dotenv import load_dotenv
 
 from .api import app
 from .bot import TalesBot
 from .config import config, config_dir
-from .database import create_tables
 from .logger import init_loggers
 
 config_folders = [
@@ -60,13 +58,10 @@ async def start_api():
 
 
 async def start() -> int:
-    load_dotenv()
-
     for folder in config_folders:
         os.makedirs(config_dir / folder, exist_ok=True)
 
     init_loggers()
-    await create_tables()
     async with asyncio.TaskGroup() as tg:
         tg.create_task(start_bot())
         tg.create_task(start_api())
