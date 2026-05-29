@@ -1,8 +1,6 @@
 import discord
 from discord import Interaction, ui
 
-from ..database.models import Artifact
-
 
 class NextButton(ui.Button["ArtifactView"]):
     def __init__(self):
@@ -14,11 +12,9 @@ class NextButton(ui.Button["ArtifactView"]):
         view.page = min(view.page + 1, view.last_page)
         view.update_button_state()
 
-        content_page = view.artifact.content[view.page]
+        content_page = view.content[view.page]
         if content_page is not None:
-            await interaction.response.edit_message(
-                content=content_page.content, view=view
-            )
+            await interaction.response.edit_message(content=content_page, view=view)
         else:
             await interaction.response.edit_message(
                 content="[no more pages]", view=None
@@ -35,11 +31,9 @@ class PrevButton(ui.Button["ArtifactView"]):
         view.page = max(view.page - 1, 0)
         view.update_button_state()
 
-        content_page = view.artifact.content[view.page]
+        content_page = view.content[view.page]
         if content_page is not None:
-            await interaction.response.edit_message(
-                content=content_page.content, view=view
-            )
+            await interaction.response.edit_message(content=content_page, view=view)
         else:
             await interaction.response.edit_message(
                 content="[no more pages]", view=None
@@ -49,16 +43,16 @@ class PrevButton(ui.Button["ArtifactView"]):
 class ArtifactView(
     ui.View,
 ):
-    def __init__(self, artifact: Artifact, page: int = 0) -> None:
+    def __init__(self, content: list[str], page: int = 0) -> None:
         super().__init__(timeout=100)
-        self.artifact = artifact
+        self.content = content
         self.page: int = page
-        self.last_page = len(self.artifact.content) - 1
+        self.last_page = len(self.content) - 1
 
         self.next = NextButton()
         self.prev = PrevButton()
 
-        if len(self.artifact.content) > 1:
+        if len(self.content) > 1:
             self.add_item(self.prev)
             self.add_item(self.next)
 

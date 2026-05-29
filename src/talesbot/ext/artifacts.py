@@ -5,8 +5,7 @@ from typing import cast
 from discord import Interaction, Member, app_commands
 from discord.ext import commands
 
-from talesbot import common, handles, players, server
-from talesbot.database import SessionM, artifact
+from talesbot import artifacts, common, handles, players, server
 
 from ..errors import ArtifactNotFoundError
 from ..ui.artifact import ArtifactView
@@ -47,24 +46,23 @@ class ArtifactsCog(commands.Cog):
     ):
         await interaction.response.defer(ephemeral=True)
         member = cast(Member, interaction.user)
-        async with SessionM() as session:
-            a = await artifact.access(session, name, password)
 
-            if a is None:
-                await self.log_connect_attempt(member, name, password)
-                raise ArtifactNotFoundError(name)
+        content, announcement = artifacts.access(name, password)
+        if content is None:
+            await self.log_connect_attempt(member, name, password)
+            raise ArtifactNotFoundError(name)
 
-            async with asyncio.TaskGroup() as tg:
-                tg.create_task(
-                    self.log_connect_attempt(member, name, password, a.announcement)
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(
+                self.log_connect_attempt(member, name, password, announcement)
+            )
+            tg.create_task(
+                interaction.followup.send(
+                    content=content[0],
+                    view=ArtifactView(content),
+                    ephemeral=True,
                 )
-                tg.create_task(
-                    interaction.followup.send(
-                        content=a.content[0].content,
-                        view=ArtifactView(a),
-                        ephemeral=True,
-                    )
-                )
+            )
 
     async def log_connect_attempt(
         self,
