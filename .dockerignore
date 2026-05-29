@@ -5,6 +5,7 @@ config
 .dockerignore
 .editorconfig
 .env
+.envrc
 .gitignore
 Dockerfile
 __pycache__

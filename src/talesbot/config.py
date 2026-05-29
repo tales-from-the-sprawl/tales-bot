@@ -1,6 +1,5 @@
 from pathlib import PurePath
 
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 config_dir = PurePath("config")
@@ -14,7 +13,6 @@ class Config(BaseSettings):
 
     DISCORD_TOKEN: str
     APPLICATION_ID: int
-    SQLALCHEMY_DATABASE_URI: str = Field(alias="DATABASE_URI")
 
     GUILD_NAME: str
     GM_ROLE_NAME: str

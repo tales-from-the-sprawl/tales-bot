@@ -9,6 +9,7 @@ wheels/
 # Runtime conf files
 config/
 .env
+.envrc
 
 # MacOS
 .DS_Store

@@ -16,9 +16,8 @@ def create(
 ):
     file = config_dir / artifact_conf_dir / f"{name}.md"
     with open(file, "x") as f:
-        meta = {"password": password, "announcement": announcement}
-
-        post = frontmatter.Post(content, metadata=meta)
+        c = dump_body(parse_body(content))
+        post = frontmatter.Post(c, password=password, announcement=announcement)
         frontmatter.dump(post, f)
 
 
@@ -64,8 +63,9 @@ def list_all():
 
 
 def parse_body(text: str):
-    return text.split("===\n")
+    return [p.strip() for p in text.split("===\n")]
 
 
 def dump_body(pages: list[str]):
-    return "===\n".join(pages)
+    ps = [p.strip() for p in pages]
+    return "===\n".join(ps)
