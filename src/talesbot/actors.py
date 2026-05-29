@@ -48,7 +48,7 @@ async def clear_actor(actor_id: str):
         finance_channel_id = str(actor.finance_channel_id)
         actors = get_actors_confobj()
         if finance_channel_id in actors[finance_channel_mapping_index]:
-            del actors[finance_channel_mapping_index][finance_channel_id]
+            del actors[finance_channel_mapping_index][finance_channel_id]  # pyright: ignore[reportIndexIssue, reportArgumentType]
         del actors[actor_id]
         actors.write()
         clear_trans_memory(actor_id)
