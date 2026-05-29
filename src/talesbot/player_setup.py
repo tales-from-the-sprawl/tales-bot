@@ -203,7 +203,11 @@ async def setup_handles_no_welcome_new_player(actor_id: str, main_handle: str):
             pass
 
 
-async def setup_alternate_handles(actor_id: str, aliases, alias_type: HandleTypes):
+async def setup_alternate_handles(
+    actor_id: str,
+    aliases: list[tuple[str, int]] | list[tuple[str, int, str]],
+    alias_type: HandleTypes,
+):
     result = ActionResult()
     result.report = ""
     for handle_data in aliases:
@@ -225,33 +229,38 @@ async def setup_alternate_handles(actor_id: str, aliases, alias_type: HandleType
             )
             await finances.add_funds(other_handle, int(amount))
             result.success = True
-    if result.success:
-        result.report += get_all_connected_aliases_of_type_report(
-            alias_type, other_handle_id
-        )
+
+        if result.success:
+            result.report += get_all_connected_aliases_of_type_report(
+                alias_type, other_handle_id
+            )
     return result
 
 
 def get_connected_alias_report(handle_id: str, handle_type: HandleTypes, amount: int):
     ending = "" if amount == 0 else f" with {coin} **{amount}**"
-    if handle_type == HandleTypes.Regular:
-        return f"- Regular handle **{handle_id}**{ending}\n"
-    elif handle_type == HandleTypes.Burner:
-        return f"- Burner handle **{handle_id}**{ending}\n"
-    elif handle_type == HandleTypes.NPC:
-        return f"  [OFF: NPC handle **{handle_id}**{ending}.]\n"
+    match handle_type:
+        case HandleTypes.Regular:
+            return f"- Regular handle **{handle_id}**{ending}\n"
+        case HandleTypes.Burner:
+            return f"- Burner handle **{handle_id}**{ending}\n"
+        case HandleTypes.NPC:
+            return f"  [OFF: NPC handle **{handle_id}**{ending}.]\n"
+        case _:
+            return f"  Other handle **{handle_id}**{ending}.]\n"
 
 
 def get_all_connected_aliases_of_type_report(
-    handle_type: HandleTypes, last_example: str = None
+    handle_type: HandleTypes, last_example: str | None = None
 ):
-    if handle_type == HandleTypes.Regular:
-        return ""
-    elif handle_type == HandleTypes.Burner:
-        example_burner = "burner_name" if last_example is None else last_example
-        return f'  (Use for example "/burn {example_burner}" to destroy a burner and erase its tracks)\n'
-    elif handle_type == HandleTypes.NPC:
-        return "  [OFF: NPC handles let you act as someone else, and cannot be traced to your other handles.]\n"
+    match handle_type:
+        case HandleTypes.Burner:
+            example_burner = "burner_name" if last_example is None else last_example
+            return f'  (Use for example "/burn {example_burner}" to destroy a burner and erase its tracks)\n'
+        case HandleTypes.NPC:
+            return "  [OFF: NPC handles let you act as someone else, and cannot be traced to your other handles.]\n"
+        case _:
+            return ""
 
 
 async def setup_groups(actor_id: str, group_names: list[str]):

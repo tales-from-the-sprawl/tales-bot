@@ -2,9 +2,9 @@
 
 import asyncio
 import logging
-from enum import Enum
+from enum import StrEnum
 
-from . import channels, chats, handles, player_setup, players
+from . import channels, chats, handles, players
 from .common import gm_announcements_name
 
 # Game-wide state. Only put general info here; anything specific should go in players / shops / groups / scenarios etc.
@@ -12,7 +12,7 @@ from .common import gm_announcements_name
 logger = logging.getLogger(__name__)
 
 
-class NetworkState(str, Enum):
+class NetworkState(StrEnum):
     NotStarted = "not_started"
     Ready = "ready"
     Down = "down"

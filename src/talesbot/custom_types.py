@@ -1,7 +1,7 @@
 import datetime
 import json
 from copy import deepcopy
-from enum import Enum
+from enum import StrEnum
 
 
 class ActionResult:
@@ -56,7 +56,7 @@ class PostTimestamp:
         return new_total - old_total
 
 
-class TransTypes(str, Enum):
+class TransTypes(StrEnum):
     Transfer = "t"
     Collect = "c"
     Burn = "b"
@@ -187,7 +187,7 @@ class PlayerData:
         return json.dumps(self.__dict__)
 
 
-class HandleTypes(str, Enum):
+class HandleTypes(StrEnum):
     Unused = "unused"
     Invalid = "invalid"
     Reserved = "reserved"
@@ -198,6 +198,11 @@ class HandleTypes(str, Enum):
 
 
 class Handle:
+    handle_id: str
+    handle_type: HandleTypes
+    actor_id: str | None
+    auto_respond_message: str | None
+
     def __init__(
         self,
         handle_id: str,

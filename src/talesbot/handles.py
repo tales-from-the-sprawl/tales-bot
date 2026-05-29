@@ -271,7 +271,7 @@ async def create_handle(
     handle_id: str,
     handle_type: HandleTypes,
     force_reserved: bool = False,
-    auto_respond_message: str = None,
+    auto_respond_message: str | None = None,
 ):
     handle = Handle(
         handle_id,

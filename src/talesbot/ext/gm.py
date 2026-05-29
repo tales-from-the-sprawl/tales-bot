@@ -93,19 +93,6 @@ class GmCog(commands.GroupCog, group_name="gm"):
             raise MissingRole(gm.role_name)
         return True
 
-    @app_commands.command(
-        description="Add a player's handle before they join the server",
-    )
-    async def add_known_handle(self, interaction: Interaction, handle_id: str):
-        player_setup.add_known_handle(handle_id)
-        await interaction.response.send_message(
-            (
-                f"Added entry for {handle_id}. Please update its contents manually "
-                "by editing the file"
-            ),
-            ephemeral=True,
-        )
-
     scenario_g = app_commands.Group(name="scenario", description="Manage scenarios")
 
     @scenario_g.command(name="run", description="Run a scenario")
