@@ -42,6 +42,7 @@ class RegisterCog(commands.Cog):
                     ),
                     ephemeral=True,
                 )
+                logger.error(f"Failed to register {handle_id}\n{report}")
             else:
                 await interaction.followup.send(
                     "Success! Now have a look at all your new channels 🥳",

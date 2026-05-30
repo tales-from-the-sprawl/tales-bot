@@ -1334,7 +1334,7 @@ async def process_message_data(
     chat_name = chat_channel_data.chat_name
 
     # With timestamps from discord, we must apply the DST diff compared to the python env timestamps
-    post_time = PostTimestamp.from_datetime(msg_data.created_at, dst_diff=2)
+    post_time = PostTimestamp.from_datetime(msg_data.created_at)
     full_post = channels.record_new_post(
         chat_channel_data.chat_name, poster_id, post_time
     )
