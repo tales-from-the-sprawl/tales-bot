@@ -230,10 +230,10 @@ async def setup_alternate_handles(
             await finances.add_funds(other_handle, int(amount))
             result.success = True
 
-        if result.success:
-            result.report += get_all_connected_aliases_of_type_report(
-                alias_type, other_handle_id
-            )
+    if result.success:
+        result.report += get_all_connected_aliases_of_type_report(
+            alias_type, other_handle_id
+        )
     return result
 
 
