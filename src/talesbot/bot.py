@@ -123,7 +123,6 @@ class TalesBot(commands.Bot):
         await groups.init(clear_all=clear_all)
         reactions.init()
         await gm.init(clear_all=clear_all)
-        game.init()
         logger.debug("Initialization complete.")
         game.start_game()
 
