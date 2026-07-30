@@ -31,7 +31,7 @@ async def transfer(data: Transfer):
     )
     try:
         transaction = await finances.transfer_funds(
-            data.sender, data.receiver, data.amount, allow_partial=True
+            data.sender, data.receiver, data.amount, allow_partial=data.allow_partial
         )
 
         return {
