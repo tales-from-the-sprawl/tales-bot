@@ -3,14 +3,17 @@
 # This module handles the creation and execution of scenarios, which are automated sequences of in-game events.
 # A scenario could be for example a simulated network crash, automated spam messages, or creation of a new group.
 
+import abc
 import asyncio
 import json
 import logging
+from abc import ABC, abstractmethod
 from copy import deepcopy
-from enum import Enum
-from typing import List
+from enum import Enum, StrEnum
+from typing import List, override
 
 from configobj import ConfigObj
+from pydantic import BaseModel
 
 from . import game, groups, handles, players
 from .config import config_dir
@@ -18,7 +21,7 @@ from .config import config_dir
 logger = logging.getLogger(__name__)
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     Wait = "wait"
     NetworkOutage = "outage"
     NetworkDown = "down"
@@ -35,42 +38,28 @@ async def send_message_to_channels(message: str, channel_list):
     await asyncio.gather(*task_list)
 
 
-class WaitEvent:
-    def __init__(self, time_in_seconds: int = 60):
-        self.time_in_seconds = time_in_seconds
+class Event(ABC, BaseModel):
+    kind: EventType
 
-    @staticmethod
-    def from_string(string: str):
-        obj = WaitEvent()
-        obj.__dict__.update(json.loads(string))
-        return obj
+    @abstractmethod
+    async def execute(self):
+        pass
 
-    def to_string(self):
-        return json.dumps(self.__dict__)
 
-    def get_type(self):
-        return EventType.Wait
+class WaitEvent(Event):
+    kind = EventType.Wait
+    time_in_seconds: int = 60
 
+    @override
     async def execute(self):
         await asyncio.sleep(self.time_in_seconds)
 
 
-class NetworkOutageEvent:
-    def __init__(self, time_in_seconds: int = 60):
-        self.time_in_seconds = time_in_seconds
+class NetworkOutageEvent(Event):
+    kind = EventType.NetworkOutage
+    time_in_seconds: int = 60
 
-    @staticmethod
-    def from_string(string: str):
-        obj = NetworkOutageEvent()
-        obj.__dict__.update(json.loads(string))
-        return obj
-
-    def to_string(self):
-        return json.dumps(self.__dict__)
-
-    def get_type(self):
-        return EventType.NetworkOutage
-
+    @override
     async def execute(self):
         down = NetworkDownEvent()
         await down.execute()
@@ -79,22 +68,10 @@ class NetworkOutageEvent:
         await restored.execute()
 
 
-class NetworkDownEvent:
-    def __init__(self):
-        pass
+class NetworkDownEvent(Event):
+    kind = EventType.NetworkDown
 
-    @staticmethod
-    def from_string(string: str):
-        obj = NetworkDownEvent()
-        obj.__dict__.update(json.loads(string))
-        return obj
-
-    def to_string(self):
-        return json.dumps(self.__dict__)
-
-    def get_type(self):
-        return EventType.NetworkDown
-
+    @override
     async def execute(self):
         channel_list = [
             players.get_cmd_line_channel(p) for p in players.get_all_players()
@@ -242,69 +219,8 @@ class MessageExceptGroupsEvent:
         await send_message_to_channels(self.message, channel_list)
 
 
-class Event:
-    def __init__(
-        self,
-        event_type: EventType,
-        data: str,
-        repetitions: int = 1,
-        spacing: int = 0,  # in seconds
-    ):
-        self.event_type = event_type
-        self.data = data
-        self.repetitions = repetitions
-        self.spacing = spacing
-
-    def from_specific_event(event_obj, repetitions: int = 1, spacing: int = 0):
-        return Event(
-            event_obj.get_type(),
-            event_obj.to_string(),
-            repetitions=repetitions,
-            spacing=spacing,
-        )
-
-    @staticmethod
-    def from_string(string: str):
-        obj = Event(EventType.Unknown, None)
-        obj.__dict__.update(json.loads(string))
-        return obj
-
-    def to_string(self):
-        return json.dumps(self.__dict__)
-
-    def to_specific_type(self):
-        if self.event_type == EventType.Wait:
-            return WaitEvent.from_string(self.data)
-        elif self.event_type == EventType.NetworkOutage:
-            return NetworkOutageEvent.from_string(self.data)
-        elif self.event_type == EventType.NetworkDown:
-            return NetworkDownEvent.from_string(self.data)
-        elif self.event_type == EventType.NetworkRestored:
-            return NetworkRestoredEvent.from_string(self.data)
-        elif self.event_type == EventType.MessagePlayersByHandles:
-            return MessagePlayersByHandleEvent.from_string(self.data)
-        elif self.event_type == EventType.MessageAllPlayersExceptHandles:
-            return MessagePlayersExceptHandlesEvent.from_string(self.data)
-        elif self.event_type == EventType.MessageGroups:
-            return MessageGroupsEvent.from_string(self.data)
-        elif self.event_type == EventType.MessageExceptGroups:
-            return MessageExceptGroupsEvent.from_string(self.data)
-        else:
-            logger.error(f"Scenario event type {self.event_type} not implemented yet.")
-            return None
-
-    async def execute(self):
-        for i in range(self.repetitions):
-            event = self.to_specific_type()
-            if event is None:
-                return
-            await event.execute()
-            logger.debug(f"Executed repetition {i + 1} out of {self.repetitions}")
-            await asyncio.sleep(self.spacing)
-
-
 class Scenario:
-    def __init__(self, name: str, steps: List[Event] = None):
+    def __init__(self, name: str, steps: list[Event] | None = None):
         self.name = name
         self.steps = [] if steps is None else steps
 
