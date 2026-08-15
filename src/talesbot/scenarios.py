@@ -10,7 +10,7 @@ import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from enum import Enum, StrEnum
-from typing import List, override
+from typing import override
 
 from configobj import ConfigObj
 from pydantic import BaseModel
@@ -39,8 +39,6 @@ async def send_message_to_channels(message: str, channel_list):
 
 
 class Event(ABC, BaseModel):
-    kind: EventType
-
     @abstractmethod
     async def execute(self):
         pass
@@ -109,7 +107,7 @@ class NetworkRestoredEvent:
 
 
 class MessagePlayersByHandleEvent:
-    def __init__(self, message: str, handles: List[str] = None):
+    def __init__(self, message: str, handles: list[str] = None):
         self.message = message
         self.handles = [] if handles is None else handles
 
