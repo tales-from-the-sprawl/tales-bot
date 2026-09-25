@@ -4,6 +4,7 @@ from typing import List, cast
 
 import discord
 from configobj import ConfigObj
+from discord.abc import GuildChannel
 
 from talesbot import gm
 
@@ -227,24 +228,18 @@ async def create_player(member: discord.Member, handle_id: str):
     return None
 
 
-def get_cmd_line_channels_for_handles(handles: List[str]):
+def get_cmd_line_channels_for_handles(handles: list[str]):
     actor_set = set()  # Use a set to weed out duplicates
     for handle_id in handles:
         actor = actors.get_actor_for_handle(handle_id)
         if actor is not None:
             actor_set.add(actor)
-    channel_list = []
+    channel_list: list[GuildChannel] = []
     for actor in actor_set:
         channel = get_cmd_line_channel(actor.actor_id)
         if channel is not None:
             channel_list.append(channel)
     return channel_list
-
-
-def get_cmd_line_channel_for_handle(handle: Handle):
-    actor: actors.Actor = actors.get_actor_for_handle(handle)
-    if actor is not None:
-        return get_cmd_line_channel(actor.actor_id)
 
 
 def get_cmd_line_channel(player_id: str):

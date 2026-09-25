@@ -10,12 +10,13 @@ import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from enum import Enum, StrEnum
-from typing import List, override
+from typing import Annotated, Literal, override
 
 from configobj import ConfigObj
-from pydantic import BaseModel
+from discord.abc import GuildChannel
+from pydantic import BaseModel, Field
 
-from . import game, groups, handles, players
+from . import game, groups, players
 from .config import config_dir
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 class EventType(StrEnum):
     Wait = "wait"
+    Repeat = "repeat"
+    Sequence = "seq"
     NetworkOutage = "outage"
     NetworkDown = "down"
     NetworkRestored = "up"
@@ -38,38 +41,59 @@ async def send_message_to_channels(message: str, channel_list):
     await asyncio.gather(*task_list)
 
 
-class Event(ABC, BaseModel):
-    kind: EventType
-
+class Event(ABC):
     @abstractmethod
     async def execute(self):
         pass
 
 
-class WaitEvent(Event):
-    kind = EventType.Wait
-    time_in_seconds: int = 60
+class SequenceEvent(BaseModel, Event):
+    kind: Literal["seq"] = "seq"
+    events: list["EventAnnotated"]
 
     @override
     async def execute(self):
-        await asyncio.sleep(self.time_in_seconds)
+        for event in self.events:
+            await event.execute()
 
 
-class NetworkOutageEvent(Event):
-    kind = EventType.NetworkOutage
-    time_in_seconds: int = 60
+class RepeatEvent(BaseModel, Event):
+    kind: Literal["repeat"] = "repeat"
+    count: int
+    event: "EventAnnotated"
 
     @override
     async def execute(self):
-        down = NetworkDownEvent()
-        await down.execute()
-        await asyncio.sleep(self.time_in_seconds)
-        restored = NetworkRestoredEvent()
-        await restored.execute()
+        for _i in range(self.count):
+            await self.event.execute()
 
 
-class NetworkDownEvent(Event):
-    kind = EventType.NetworkDown
+class WaitEvent(BaseModel, Event):
+    kind: Literal["wait"] = "wait"
+    time: float
+
+    @override
+    async def execute(self):
+        await asyncio.sleep(self.time)
+
+
+class NetworkOutageEvent(BaseModel, Event):
+    kind: Literal["outage"] = "outage"
+    time: float
+
+    @override
+    async def execute(self):
+        await SequenceEvent(
+            events=[
+                NetworkDownEvent(),
+                WaitEvent(time=self.time),
+                NetworkRestoredEvent(),
+            ]
+        ).execute()
+
+
+class NetworkDownEvent(BaseModel, Event):
+    kind: Literal["down"] = "down"
 
     @override
     async def execute(self):
@@ -82,22 +106,10 @@ class NetworkDownEvent(Event):
         game.set_network_down()
 
 
-class NetworkRestoredEvent:
-    def __init__(self):
-        pass
+class NetworkRestoredEvent(BaseModel, Event):
+    kind: Literal["up"] = "up"
 
-    @staticmethod
-    def from_string(string: str):
-        obj = NetworkRestoredEvent()
-        obj.__dict__.update(json.loads(string))
-        return obj
-
-    def to_string(self):
-        return json.dumps(self.__dict__)
-
-    def get_type(self):
-        return EventType.NetworkRestored
-
+    @override
     async def execute(self):
         channel_list = [
             players.get_cmd_line_channel(p) for p in players.get_all_players()
@@ -108,22 +120,42 @@ class NetworkRestoredEvent:
         )
 
 
-class MessagePlayersByHandleEvent:
-    def __init__(self, message: str, handles: List[str] = None):
-        self.message = message
-        self.handles = [] if handles is None else handles
+class MessageEvent(BaseModel, Event):
+    kind: Literal["msg"] = "msg"
 
-    @staticmethod
-    def from_string(string: str):
-        obj = MessagePlayersByHandleEvent(None)
-        obj.__dict__.update(json.loads(string))
-        return obj
+    message: str
+    handles: list[str] = []
+    groups: list[str] = []
 
-    def to_string(self):
-        return json.dumps(self.__dict__)
+    exclude: bool
 
-    def get_type(self):
-        return EventType.MessagePlayersByHandles
+    @override
+    async def execute(self):
+        channel_list = players.get_cmd_line_channels_for_handles(self.handles)
+        channel_ids = [c.id for c in channel_list]
+
+        group_channel_list = [
+            players.get_cmd_line_channel(c)
+            for c in groups.get_members_of_groups(self.groups)
+        ]
+
+        channel_list.extend(group_channel_list)
+
+        if self.exclude:
+            excluded_channel_list: list[GuildChannel] = []
+            for player_id in players.get_all_players():
+                channel = players.get_cmd_line_channel(player_id)
+                if channel is not None and channel.id not in channel_ids:
+                    excluded_channel_list.append(channel)
+            await send_message_to_channels(self.message, excluded_channel_list)
+        else:
+            await send_message_to_channels(self.message, channel_list)
+
+
+class MessagePlayersByHandleEvent(BaseModel, Event):
+    kind: Literal[EventType.MessagePlayersByHandles] = EventType.MessagePlayersByHandles
+    message: str
+    handles: list[str] = []
 
     async def execute(self):
         channel_list = players.get_cmd_line_channels_for_handles(self.handles)
@@ -131,21 +163,12 @@ class MessagePlayersByHandleEvent:
 
 
 class MessagePlayersExceptHandlesEvent:
-    def __init__(self, message: str, handles: List[str] = None):
-        self.message = message
-        self.handles = [] if handles is None else handles
+    kind: Literal[EventType.MessageAllPlayersExceptHandles] = (
+        EventType.MessageAllPlayersExceptHandles
+    )
 
-    @staticmethod
-    def from_string(string: str):
-        obj = MessagePlayersExceptHandlesEvent(None)
-        obj.__dict__.update(json.loads(string))
-        return obj
-
-    def to_string(self):
-        return json.dumps(self.__dict__)
-
-    def get_type(self):
-        return EventType.MessageAllPlayersExceptHandles
+    message: str
+    handles: list[str] = []
 
     async def execute(self):
         channel_ids_to_avoid = [
@@ -163,21 +186,10 @@ class MessagePlayersExceptHandlesEvent:
 
 
 class MessageGroupsEvent:
-    def __init__(self, message: str, groups: List[str] = None):
-        self.message = message
-        self.groups = [] if groups is None else handles
+    kind: Literal[EventType.MessageGroups] = EventType.MessageGroups
 
-    @staticmethod
-    def from_string(string: str):
-        obj = MessageGroupsEvent(None)
-        obj.__dict__.update(json.loads(string))
-        return obj
-
-    def to_string(self):
-        return json.dumps(self.__dict__)
-
-    def get_type(self):
-        return EventType.MessageGroups
+    message: str
+    groups: list[str] = []
 
     async def execute(self):
         channel_list = [
@@ -190,21 +202,10 @@ class MessageGroupsEvent:
 
 
 class MessageExceptGroupsEvent:
-    def __init__(self, message: str, groups: List[str] = None):
-        self.message = message
-        self.groups = [] if groups is None else groups
+    kind: Literal[EventType.MessageExceptGroups] = EventType.MessageExceptGroups
 
-    @staticmethod
-    def from_string(string: str):
-        obj = MessageExceptGroupsEvent(None)
-        obj.__dict__.update(json.loads(string))
-        return obj
-
-    def to_string(self):
-        return json.dumps(self.__dict__)
-
-    def get_type(self):
-        return EventType.MessageExceptGroups
+    message: str
+    groups: list[str] = []
 
     async def execute(self):
         channel_ids_to_avoid = [
@@ -217,6 +218,22 @@ class MessageExceptGroupsEvent:
             if channel is not None and channel.id not in channel_ids_to_avoid:
                 channel_list.append(channel)
         await send_message_to_channels(self.message, channel_list)
+
+
+type EventUnion = (
+    SequenceEvent
+    | RepeatEvent
+    | WaitEvent
+    | NetworkOutageEvent
+    | NetworkDownEvent
+    | NetworkRestoredEvent
+    | MessagePlayersByHandleEvent
+    | MessagePlayersExceptHandlesEvent
+    | MessageGroupsEvent
+    | MessageExceptGroupsEvent
+)
+
+type EventAnnotated = Annotated[EventUnion, Field(discriminator="kind")]
 
 
 class Scenario:

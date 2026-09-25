@@ -142,19 +142,19 @@ def get_discord_channels_from_name(channel_name: str):
     ]
 
 
-def get_discord_channel(channel_id: str, guild_id: Optional[int] = None):
+def get_discord_channel(channel_id: int, guild_id: int | None = None):
     # We should make sure the channel is in the correct guild here, but leaving
     # that for the future. Channel IDs shouldnt overlap between guilds unless a
     # really unusual match appears. Let's pray to the RNG gods. Or make guild_id
     # a non-optional arg.
     for guild in server.get_guilds():
         if guild.id == guild_id or guild_id is None:
-            ch = guild.get_channel(int(channel_id))
+            ch = guild.get_channel(channel_id)
             if ch:
                 return ch
 
 
-async def delete_discord_channel(channel_id: str, guild_id: Optional[int] = None):
+async def delete_discord_channel(channel_id: int, guild_id: int | None = None):
     channel = get_discord_channel(channel_id, guild_id)
     if channel is not None:
         await channel.delete()

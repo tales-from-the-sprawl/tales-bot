@@ -15,8 +15,8 @@ from .common import (
 
 logger = logging.getLogger(__name__)
 
-guilds = []
-guild_roles = {}
+guilds: list[discord.Guild] = []
+guild_roles: dict[int, dict] = {}
 
 # TODO: restrict reactions to only the channels where they actually do anything.
 # This is a third category I think:
@@ -48,7 +48,7 @@ public_read_only_base = discord.PermissionOverwrite(
 public_normal_base = super_access
 
 
-async def init(connected_guilds):
+async def init(connected_guilds: list[discord.Guild]):
     for guild in connected_guilds:
         guilds.append(guild)
         guild_roles[guild.id] = {}
@@ -106,7 +106,7 @@ async def remove_role_from_member(member, role):
     await member.edit(roles=new_roles)
 
 
-def check_member_has_role(member, role_names: List[str]):
+def check_member_has_role(member, role_names: list[str]):
     if member is not None:
         for role_name in role_names:
             if role_name in [r.name for r in member.roles]:
