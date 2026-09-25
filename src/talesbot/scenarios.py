@@ -10,7 +10,7 @@ import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from enum import Enum, StrEnum
-from typing import Annotated, Literal, override
+from typing import override
 
 from configobj import ConfigObj
 from discord.abc import GuildChannel
@@ -41,7 +41,7 @@ async def send_message_to_channels(message: str, channel_list):
     await asyncio.gather(*task_list)
 
 
-class Event(ABC):
+class Event(ABC, BaseModel):
     @abstractmethod
     async def execute(self):
         pass
@@ -120,8 +120,10 @@ class NetworkRestoredEvent(BaseModel, Event):
         )
 
 
-class MessageEvent(BaseModel, Event):
-    kind: Literal["msg"] = "msg"
+class MessagePlayersByHandleEvent:
+    def __init__(self, message: str, handles: list[str] = None):
+        self.message = message
+        self.handles = [] if handles is None else handles
 
     message: str
     handles: list[str] = []
