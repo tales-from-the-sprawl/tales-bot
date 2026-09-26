@@ -14,14 +14,18 @@ class HandleModal(ui.Modal, title="Register as player"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        from talesbot import handles, players  # Avoid dependency cycle
+        from talesbot import common, handles, players, server  # Avoid dependency cycle
 
         await interaction.response.defer(ephemeral=True)
         handle = self.handle.value
         member = cast(
             Member, interaction.user
         )  # Safe because can only be reached from guild chat
-        if handle == "handle" or handle == "<handle>":
+        if server.check_member_has_role(member, [common.player_role_name]):
+            await interaction.followup.send(
+                "You are already registered as a player.", ephemeral=True
+            )
+        elif handle == "handle" or handle == "<handle>":
             await interaction.followup.send(
                 'You must say which handle is yours! Example: "shadow_weaver"',
                 ephemeral=True,

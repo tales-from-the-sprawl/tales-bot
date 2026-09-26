@@ -251,7 +251,10 @@ class TalesBot(commands.Bot):
                 logger.info(f"Removing category {category.name}")
                 await category.delete()
             for role in roles:
-                if role.name in [gm.role_name, "new_player"] or role.name.isdigit():
+                if (
+                    role.name in [gm.role_name, "new_player", "player"]
+                    or role.name.isdigit()
+                ):
                     logger.info(f"Removing role {role.name}")
                     await role.delete()
 

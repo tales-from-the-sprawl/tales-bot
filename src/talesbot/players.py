@@ -205,6 +205,9 @@ async def create_player(member: discord.Member, handle_id: str):
     all_players_role = server.get_all_players_role(member.guild)
     if all_players_role not in new_roles:
         new_roles.append(all_players_role)
+    player_role = server.get_player_role(member.guild)
+    if player_role not in new_roles:
+        new_roles.append(player_role)
     new_player_role = server.get_new_player_role(member.guild)
     new_roles = [r for r in new_roles if r.name != new_player_role.name]
     await member.edit(roles=new_roles)

@@ -4,6 +4,7 @@ highest_ever_index = "___highest_ever"
 system_role_name = "system"
 admin_role_name = "admin"
 new_player_role_name = "new_player"
+player_role_name = "player"
 
 type_player = "player"
 type_shop = "shop"

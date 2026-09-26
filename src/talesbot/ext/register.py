@@ -4,7 +4,7 @@ from typing import cast
 from discord import Interaction, Member, app_commands
 from discord.ext import commands
 
-from talesbot import common, handles, players
+from talesbot import common, handles, players, server
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +20,14 @@ class RegisterCog(commands.Cog):
         ),
     )
     @app_commands.guild_only()
-    @app_commands.checks.has_role(common.new_player_role_name)
     async def join(self, interaction: Interaction, handle: str):
         await interaction.response.defer(ephemeral=True)
         member = cast(Member, interaction.user)  # Safe because of "guild_only"
-        if handle == "handle" or handle == "<handle>":
+        if server.check_member_has_role(member, [common.player_role_name]):
+            await interaction.followup.send(
+                "You are already registered as a player.", ephemeral=True
+            )
+        elif handle == "handle" or handle == "<handle>":
             await interaction.followup.send(
                 'You must say which handle is yours! Example: "/join shadow_weaver"',
                 ephemeral=True,

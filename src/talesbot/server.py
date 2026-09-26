@@ -10,6 +10,7 @@ from .common import (
     admin_role_name,
     all_players_role_name,
     new_player_role_name,
+    player_role_name,
     system_role_name,
 )
 
@@ -58,6 +59,7 @@ async def init(connected_guilds):
             gm.role_name,
             all_players_role_name,
             new_player_role_name,
+            player_role_name,
         ]:
             guild_roles[guild.id][role_name] = await _init_role(guild, role_name)
 
@@ -137,6 +139,10 @@ def get_gm_role(guild):
 
 def get_new_player_role(guild):
     return guild_roles[guild.id][new_player_role_name]
+
+
+def get_player_role(guild):
+    return guild_roles[guild.id][player_role_name]
 
 
 def _generate_overwrites_own_private_channel(player_role):
