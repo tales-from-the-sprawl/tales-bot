@@ -102,6 +102,20 @@ class GmCog(commands.GroupCog, group_name="gm"):
             report = "Command finished without any output"
         await interaction.response.send_message(report, ephemeral=True)
 
+    @scenario_g.command(name="list", description="Lists available scenarios")
+    async def list_scenarios(self, interaction: Interaction):
+        report = await scenarios.list_scenarios()
+        if report is None:
+            report = "Command finished without any output"
+        await interaction.response.send_message(report, ephemeral=True)
+
+    @scenario_g.command(name="export", description="Exports configuration of scenario")
+    async def export_scenario(self, interaction: Interaction, name: str):
+        data = await scenarios.export_scenario(name)
+        if data is None:
+            data = "Command finished without any output"
+        await interaction.response.send_message(data, ephemeral=True)
+
     @scenario_g.command(name="create", description="Create a basic scenario")
     async def create_scenario(self, interaction: Interaction, name: str):
         report = await scenarios.create_scenario(name)
