@@ -9,7 +9,6 @@ from talesbot import gm
 from .common import (
     admin_role_name,
     all_players_role_name,
-    new_player_role_name,
     player_role_name,
     system_role_name,
 )
@@ -58,7 +57,6 @@ async def init(connected_guilds):
             admin_role_name,
             gm.role_name,
             all_players_role_name,
-            new_player_role_name,
             player_role_name,
         ]:
             guild_roles[guild.id][role_name] = await _init_role(guild, role_name)
@@ -116,11 +114,6 @@ def check_member_has_role(member, role_names: List[str]):
     return False
 
 
-async def set_user_as_new_player(member):
-    new_player_role = get_new_player_role(member.guild)
-    await give_member_role(member, new_player_role)
-
-
 def get_all_players_role(guild):
     return guild_roles[guild.id][all_players_role_name]
 
@@ -135,10 +128,6 @@ def get_admin_role(guild):
 
 def get_gm_role(guild):
     return guild_roles[guild.id][gm.role_name]
-
-
-def get_new_player_role(guild):
-    return guild_roles[guild.id][new_player_role_name]
 
 
 def get_player_role(guild):
@@ -183,12 +172,12 @@ def generate_base_overwrites(
 
 def generate_setup_channel_overwrites(guild):
     return {
-        guild.default_role: no_access,
+        guild.default_role: super_access,
         get_all_players_role(guild): no_access,
+        get_player_role(guild): no_access,
         get_system_role(guild): super_access,
         get_admin_role(guild): super_access,
         get_gm_role(guild): super_access,
-        get_new_player_role(guild): super_access,
     }
 
 

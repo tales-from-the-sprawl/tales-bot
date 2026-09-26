@@ -213,9 +213,6 @@ class TalesBot(commands.Bot):
             payload.message_id, payload.user_id, channel, payload.emoji
         )
 
-    async def on_member_join(self, member: discord.Member):
-        await server.set_user_as_new_player(member)
-
     async def on_command_error(
         self,
         context: commands.Context,
