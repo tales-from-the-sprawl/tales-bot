@@ -6,6 +6,7 @@
 import asyncio
 import json
 import logging
+import os
 from copy import deepcopy
 from enum import Enum
 from typing import List
@@ -391,6 +392,21 @@ async def create_scenario(name: str):
 
     store_scenario(scenario)
 
+async def list_scenarios():
+    config_files = os.listdir(str(config_dir / scenarios_conf_dir))
+    if len(config_files) == 0:
+        return "Error: No scenarios configured"
+    commands = [i.split('.conf')[0] for i  in config_files]
+    commands_string = "Available scenarios:\n"
+    for i in commands:
+        commands_string += f"{i}\n"
+    return commands_string
+
+async def export_scenario(name: str):
+    with open(str(config_dir / scenarios_conf_dir / f"{name}.conf"), "r") as f:
+        scenario_str = f.read()
+    scenario_str = "```"+scenario_str+"```"
+    return scenario_str
 
 async def run_scenario(name: str):
     if name is None:
